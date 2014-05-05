@@ -31,9 +31,9 @@ LCXPB = 0.8
 LMUTPB = 0.05
 GCXPB = 0.8
 GMUTPB = 0.8
-POPU = 100
-LPOPU = 50
-GPOPU = 50
+POPU = 60
+LPOPU = 30
+GPOPU = 30
 
 """
 def randomPickEdge(DG, n, exclude=[]):
