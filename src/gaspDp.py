@@ -372,37 +372,38 @@ if __name__ == '__main__':
 
         """ L part !!!"""
         # select
-        offspring = toolbox.selectL(lPop, 2) 
+        #offspring = toolbox.selectL(lPop, 2) 
+        offspring = tools.selBest(lPop, LPOPU) 
         # deep copy out
         # offspring = list(map(toolbox.clone, offspring))
         # cross over
         cxOut = []
-        for c1, c2 in zip(offspring[::1], offspring[1::1]):
+        for c1 in offspring:
             if random.random() < LCXPB:
                 #cc1 cc2 is totally new
                 #random select c2 from gPop
                 c2 = tools.selRandom(gPop, 1)[0]
                 cc1, cc2 = toolbox.mateL(c1, c2)
                 cxOut.append(cc1)
-                cxOut.append(cc2)
-                #print "cx ===="
-                #showInd(c1)
-                #showInd(c2)
-                #showInd(cc1)
-                #showInd(cc2)
-                #print "===="
+                #cxOut.append(cc2)
+            else:
+                cxOut.append(c1)
 
         # mutation
         mutantOut = []
-        for mutant in offspring:
+        for mutant in cxOut:
             if random.random() < LMUTPB:
                 mut = toolbox.mutateL(mutant, dest)
                 if mut != None:
-                    mutantOut.append(mut)   
+                    if mut.fitness.values[0] < mutant.fitness.values[0]:
+                        mutantOut.append(mut)   
+                    else:
+                        mutantOut.append(mutant)   
+            else:
+                mutantOut.append(mutant)   
         #compose a big group of population
         #bigPop = pop + mutantOut + cxOut
-        bigPop = mutantOut + cxOut + lPop
-        lPop = tools.selBest(bigPop, LPOPU)
+        lPop = mutantOut
 
         print "==" * 40
         lFits = [ind.fitness.values[0] for ind in lPop]
