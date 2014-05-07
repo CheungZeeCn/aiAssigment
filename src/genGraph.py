@@ -9,7 +9,8 @@ import util
 
 
 if __name__ == '__main__':
-    DG = util.genRandomGraph(2200, 18333, 1.0, 10.0)
+    DG = util.genRandomGraph(4000, 80000, 1.0, 10.0)
+    print "gen done, write begin"
     f = open("graph1.txt", 'w')
     for a, b, w in DG.edges(data=True):
         w = w['weight']

@@ -34,6 +34,23 @@ POPU = 60
 LPOPU = 30
 GPOPU = 30
 
+def selRoulette(individuals, k):
+    s_inds = sorted(individuals, key=lambdaattrgetter("fitness"), reverse=False)
+    sum_fits = 1
+    
+    chosen = []
+    for i in xrange(k):
+        u = random.random()
+        sum_ = 0
+        for ind in s_inds:
+            sum_ += 1.0/ind.fitness.values[0]
+            if sum_ > u:
+                chosen.append(ind)
+                break
+    if len(chosen) < k:
+        chosen += s_inds[-(k-len(chosen)):]
+    return chosen
+
 def randomPickEdgeWithCounterOrWeight(G, n, counter, exclude=[]):
     """find out an edge for node n. 
         Among all the neighbours of n, 
@@ -306,7 +323,8 @@ if __name__ == '__main__':
     toolbox.register("mutateL", mutateL)
     toolbox.register("mutateG", mutateG)
     toolbox.register("selectL", selTournamentWithoutReplacement)
-    toolbox.register("selectG", selBestOrRandom)
+    #toolbox.register("selectG", selBestOrRandom)
+    toolbox.register("selectG", selRoulette)
 
 
     getBestTime = None

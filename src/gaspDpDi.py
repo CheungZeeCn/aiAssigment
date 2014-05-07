@@ -21,45 +21,58 @@ import time
 lInitCounter = Counter()
 gInitCounter = Counter()
 
+
 print "load data"
-G = util.readGraph2('graph.txt')
+DG = util.readGraph('graph.txt')
 print "load data done"
 src = '1'
 dest = '10'
 LCXPB = 0.8
 LMUTPB = 0.05
 GCXPB = 0.8
-GMUTPB = 0.4
+GMUTPB = 0.8
 POPU = 60
 LPOPU = 30
 GPOPU = 30
 
-def randomPickEdgeWithCounterOrWeight(G, n, counter, exclude=[]):
+"""
+def randomPickEdge(DG, n, exclude=[]):
+    "find out an edge for node n"        
+    exclude = set(exclude)
+    nodes = set(DG[n].keys()) - exclude  
+    #print nodes
+    if len(nodes) == 0:
+        return None
+    n2 = random.sample(nodes, 1)[0]
+    return n2
+"""
+
+def randomPickEdgeWithCounterOrWeight(DG, n, counter, exclude=[]):
     """find out an edge for node n. 
         Among all the neighbours of n, 
         we pick up the node with minimum value 
         in counter
     """
     exclude = set(exclude)
-    nodes = set(G[n].keys()) - exclude  
+    nodes = set(DG[n].keys()) - exclude  
     #print nodes
     if len(nodes) == 0:
         return None
     if random.random() >= 0.5:
-        n3 = min(nodes, key=lambda x: G[n][x]['weight'])
+        n3 = min(nodes, key=lambda x: DG[n][x]['weight'])
         return n3
     else:
         n2 = min(nodes, key=lambda x: counter[x])
         return n2
 
-def randomPickEdgeWithCounter(G, n, counter, exclude=[]):
+def randomPickEdgeWithCounter(DG, n, counter, exclude=[]):
     """find out an edge for node n. 
         Among all the neighbours of n, 
         we pick up the node with minimum value 
         in counter
     """
     exclude = set(exclude)
-    nodes = set(G[n].keys()) - exclude  
+    nodes = set(DG[n].keys()) - exclude  
     #print nodes
     if len(nodes) == 0:
         return None
@@ -67,13 +80,13 @@ def randomPickEdgeWithCounter(G, n, counter, exclude=[]):
     #n2 = random.sample(nodes, 1)[0]
     return n2
 
-def initIndividualL(G, s, d):
+def initIndividualL(DG, s, d):
     "Use lInitCounter for counting"
     idi = creator.Individual()    
     idi.append(s)
     n = s
     while True:
-        nextNode = randomPickEdgeWithCounterOrWeight(G, n, lInitCounter, exclude=idi)
+        nextNode = randomPickEdgeWithCounterOrWeight(DG, n, lInitCounter, exclude=idi)
         if nextNode == None: #dead, reset
             idi = creator.Individual()
             idi.append(s)
@@ -88,12 +101,12 @@ def initIndividualL(G, s, d):
             lInitCounter[nextNode] += 1
             n = nextNode
 
-def initIndividualG(G, s, d):
+def initIndividualG(DG, s, d):
     idi = creator.Individual()    
     idi.append(s)
     n = s
     while True:
-        nextNode = randomPickEdgeWithCounter(G, n, gInitCounter, exclude=idi)
+        nextNode = randomPickEdgeWithCounter(DG, n, gInitCounter, exclude=idi)
         if nextNode == None: #dead, reset
             idi = creator.Individual()
             idi.append(s)
@@ -114,12 +127,12 @@ def evalOneMin(individual):
     for i in range(len(individual)-1):
         s = individual[i]
         d = individual[i+1]
-        fit += G[s][d]['weight'] 
+        fit += DG[s][d]['weight'] 
     return [fit]
 
 def selBestOrRandom(individuals, k):
     chosen = []
-    if random.random() <= 0.1:
+    if random.random() <= 0.2:
         return tools.selRandom(individuals, k)
     else:
         return tools.selBest(individuals, k)
@@ -255,7 +268,7 @@ def mutateL(ind, d):
     newInd[:] = newInd[:mutSite+1]
     n = newInd[-1]
     while True:
-        nextNode = randomPickEdgeWithCounterOrWeight(G, n, lInitCounter, exclude=newInd)
+        nextNode = randomPickEdgeWithCounterOrWeight(DG, n, lInitCounter, exclude=newInd)
         if nextNode == None: #dead, reset
             return None
         elif nextNode == d: # connected
@@ -274,7 +287,7 @@ def mutateG(ind, d):
     newInd[:] = newInd[:mutSite+1]
     n = newInd[-1]
     while True:
-        nextNode = randomPickEdgeWithCounter(G, n, gInitCounter, exclude=newInd)
+        nextNode = randomPickEdgeWithCounter(DG, n, gInitCounter, exclude=newInd)
         if nextNode == None: #dead, reset
             return None
         elif nextNode == d: # connected
@@ -296,8 +309,8 @@ if __name__ == '__main__':
     # functions wrapping
     toolbox = base.Toolbox()
     tb = toolbox
-    toolbox.register("individualL", initIndividualL, G, src, dest)
-    toolbox.register("individualG", initIndividualG, G, src, dest)
+    toolbox.register("individualL", initIndividualL, DG, src, dest)
+    toolbox.register("individualG", initIndividualG, DG, src, dest)
     toolbox.register("populationL", tools.initRepeat, list, toolbox.individualL)
     toolbox.register("populationG", tools.initRepeat, list, toolbox.individualG)
     toolbox.register("evaluate", evalOneMin)
@@ -308,9 +321,12 @@ if __name__ == '__main__':
     toolbox.register("selectL", selTournamentWithoutReplacement)
     toolbox.register("selectG", selBestOrRandom)
 
+    #print DG.nodes()
+    #print randomPickEdge(DG, '1', ['6'])
+    #idi = initIndividual(DG, '1', '4')
+    #print idi
+    #print evalOneMin(idi)
 
-    getBestTime = None
-    timeBegin = time.time()
     # algorithm
     print "Init..." 
     timeInitBegin = time.time()
@@ -327,15 +343,6 @@ if __name__ == '__main__':
     showPop(lPop)
     print "*"*40, "popG", "*"*40
     showPop(gPop)
-
-    #calc dj
-    shortest = nx.dijkstra_path(G,source=src,target=dest)
-    best = creator.Individual()      
-    best[:] = shortest
-    best.fitness.values = evalOneMin(best)
-    timeDjDone = time.time()
-    print "Best"
-    showInd(best)
 
     # Begin the evolution
     NGEN = 100
@@ -398,56 +405,30 @@ if __name__ == '__main__':
         #bigPop = pop + mutantOut + cxOut
         lPop = mutantOut
 
+        print "==" * 40
         lFits = [ind.fitness.values[0] for ind in lPop]
         length = len(lPop)
         lMean = sum(lFits) / length
         lSum2 = sum(x*x for x in lFits)
         lStd = abs(lSum2 / length - lMean**2)**0.5
-        lMin = min(lFits)
-        lMax = max(lFits)
-
         gFits = [ind.fitness.values[0] for ind in gPop]
         length = len(gPop)
         gMean = sum(gFits) / length
         gSum2 = sum(x*x for x in gFits)
         gStd = abs(gSum2 / length - gMean**2)**0.5
-        gMin = min(gFits)
-        gMax = max(gFits)
-        if lMin == best.fitness.values[0] and \
-            getBestTime != None:
-            getBestTime = time.time()
-        if gMin == best.fitness.values[0] and \
-            getBestTime != None:
-            getBestTime = time.time()
-        fits = lFits + gFits
-        length = len(lPop) + len(gPop)
-        mean = sum(fits) / length
-        sum2 = sum(x*x for x in fits)
-        std = abs(sum2 / length - mean**2)**0.5
-        Min = min(fits)
-        Max = max(fits)
-
-        print "==" * 40
+        
         #showPop(lPop)
-        print("#  DJBEST %s" % best.fitness.values[0])
-        print("#  lMin %s" % lMin)
-        print("#  lMax %s" % lMax)
+        print("#  lMin %s" % min(lFits))
+        print("#  lMax %s" % max(lFits))
         print("#  lAvg %s" % lMean)
         print("#  lStd %s" % lStd)
         print "- " * 40
-        print("#  gMin %s" % gMin)
-        print("#  gMax %s" % gMax)
+        print("#  gMin %s" % min(gFits))
+        print("#  gMax %s" % max(gFits))
         print("#  gAvg %s" % gMean)
         print("#  gStd %s" % gStd)
         print "==" * 40
 
-        timeNow = time.time()
-        print "GAOUT: |" + "GEN[%s] lMin[%s] lMax[%s] lMean[%s] lStd[%.2f] timeUsed[%s]" % \
-                (g, lMin, lMax, lMean, lStd, timeNow-timeDjDone)
-        print "GAOUT: |" + "GEN[%s] gMin[%s] gMax[%s] gMean[%s] gStd[%.2f] timeUsed[%s]" % \
-                (g, gMin, gMax, gMean, gStd, timeNow-timeDjDone)
-        print "GAOUT: |" + "GEN[%s] Min[%s] Max[%s] Mean[%s] Std[%.2f] timeUsed[%s]" % \
-                (g, Min, Max, mean, std, timeNow-timeDjDone)
         # immigrantion
         gBest = tools.selBest(gPop, 1)[0] 
         lBest = tools.selBest(lPop, 1)[0]
@@ -460,23 +441,48 @@ if __name__ == '__main__':
         else:      
             gPop.append(lBest)
 
-    timeGaDone = time.time()
     lPopBest = tools.selBest(lPop, 1)[0]
     print "lPopBest"
     showInd(lPopBest)
     gPopBest = tools.selBest(gPop, 1)[0]
     print "gPopBest"
     showInd(gPopBest)
+    shortest = nx.dijkstra_path(DG,source=src,target=dest)
+    best = creator.Individual()      
+    best[:] = shortest
+    best.fitness.values = evalOneMin(best)
     print "Best"
     showInd(best)
-    #djTime, initTime, getBestTime, allTime
-    initTimeP = timeInitDone - timeBegin   
-    djTimeP = timeDjDone - timeInitDone
-    if getBestTime != None:
-        bestTimeP = getBestTime - timeDjDone
-    else:
-        bestTimeP = None
-    allTimeP = timeGaDone - timeDjDone
-    print "GAOUT: |ALL" + "djTime[%s] initTime[%s] getBestTime[%s] allTime[%s]" %\
-        (djTimeP, initTimeP, bestTimeP, allTimeP) 
+
+    #for node in DG:
+    #    if node in best and node in popBest:
+    #        DG.node[node]['color'] = 'red'
+    #    elif node in best:
+    #        DG.node[node]['color'] = 'green'
+    #    elif node in popBest:
+    #        DG.node[node]['color'] = 'blue'
+    #    else:
+    #        DG.node[node]['color'] = 'cyan'
+
+    #node_color = [DG.node[v]['color'] for v in DG]
+    #edge_labels = dict([((u,v,),d['weight']) 
+    #                for u,v,d in DG.edges(data=True)])
+
+    #for a, b in zip(popBest[:-1:2], popBest[1::2]):
+    #    DG[a][b]['color'] = 'blue'    
+
+    #print zip(best[:-1], best[1::])
+    #for a, b in zip(best[:-1], best[1::]):
+    #    if DG[a][b]['color'] == 'blue':
+    #        DG[a][b]['color'] = 'red'   
+    #    else:
+    #        DG[a][b]['color'] = 'green'   
+
+    #edge_colors = [ d['color'] for a,b,d in DG.edges(data=True) ] 
+    #
+    #pos=nx.spring_layout(DG)
+    #nx.draw_networkx_edge_labels(DG, pos, edge_labels=edge_labels)
+    #nx.draw(DG, pos, node_color=node_color, node_size=300, edge_color=edge_colors, edge_cmap=plt.cm.Reds)
+
+    #plt.show()
 

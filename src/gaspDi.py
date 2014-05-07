@@ -15,10 +15,9 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pylab
-import time
 
 print "load data"
-G = util.readGraph2('graph.txt')
+DG = util.readGraph('graph.txt')
 print "load data done"
 src = '1'
 dest = '10'
@@ -26,30 +25,29 @@ CXPB = 0.8
 MUTPB = 0.05
 POPU = 30
 
-
-def randomPickEdge(G, n, exclude=[]):
+def randomPickEdge(DG, n, exclude=[]):
     "find out an edge for node n"        
     exclude = set(exclude)
-    nodes = set(G[n].keys()) - exclude  
+    nodes = set(DG[n].keys()) - exclude  
     #print nodes
     if len(nodes) == 0:
         return None
     n2 = random.sample(nodes, 1)[0]
     return n2
 
-def initIndividual(G, s, d):
+def initIndividual(DG, s, d):
     idi = creator.Individual()    
     idi.append(s)
     n = s
     while True:
-        nextNode = randomPickEdge(G, n, exclude=idi)
+        nextNode = randomPickEdge(DG, n, exclude=idi)
         if nextNode == None: #dead, reset
             idi = creator.Individual()
             idi.append(s)
             n = s
             idi.nodeSet = set([])
         elif nextNode == d: # connected
-            idi.append(nextNode)
+            idi.append(nextNode)     
             idi.nodeSet = set(idi[1:-1])
             return idi
         else: #growing
@@ -61,14 +59,20 @@ def evalOneMin(individual):
     for i in range(len(individual)-1):
         s = individual[i]
         d = individual[i+1]
-        fit += G[s][d]['weight'] 
+        fit += DG[s][d]['weight'] 
     return [fit]
 
 def selTournamentWithoutReplacement(individuals, k):
     chosen = []
     random.shuffle(individuals)
+    #print individuals
     for i in range(0, len(individuals), k):
+        #print '..'*40
+        #print "chosen:", chosen
         chosen.append(max(individuals[i:i+k], key=attrgetter("fitness")))
+        #print individuals[i:i+k], [j.fitness for j in  individuals[i:i+k]]
+        #print "chosen:", chosen
+        #print '..'*40
     return chosen
 
 def getIndex(n, ind):
@@ -104,6 +108,7 @@ def mate(a, b):
         bb.nodeSet = set(bb[1:-1])
         aa.fitness.values = evalOneMin(aa)
         bb.fitness.values = evalOneMin(bb)
+
     return aa, bb
 
 def repair(ind, cxSite):
@@ -150,7 +155,7 @@ def mutate(ind, d):
     newInd[:] = newInd[:mutSite+1]
     n = newInd[-1]
     while True:
-        nextNode = randomPickEdge(G, n, exclude=newInd)
+        nextNode = randomPickEdge(DG, n, exclude=newInd)
         if nextNode == None: #dead, reset
             return None
         elif nextNode == d: # connected
@@ -161,6 +166,7 @@ def mutate(ind, d):
         else: #growing
             newInd.append(nextNode)     
             n = nextNode
+    
 
 
 if __name__ == '__main__':
@@ -171,32 +177,26 @@ if __name__ == '__main__':
     # functions wrapping
     toolbox = base.Toolbox()
     tb = toolbox
-    toolbox.register("individual", initIndividual, G, src, dest)
+    toolbox.register("individual", initIndividual, DG, src, dest)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("evaluate", evalOneMin)
     toolbox.register("mate", mate)
     toolbox.register("mutate", mutate)
     toolbox.register("select", selTournamentWithoutReplacement)
 
-    getBestTime = None
-    timeBegin = time.time()
+    #print DG.nodes()
+    #print randomPickEdge(DG, '1', ['6'])
+    #idi = initIndividual(DG, '1', '4')
+    #print idi
+    #print evalOneMin(idi)
+
     # algorithm
     print "Init..."
     pop = toolbox.population(n=POPU)
     # Evaluate the entire population
     updateFitness(pop)
-    timeInitDone = time.time()
     print "Initialation Done"
     showPop(pop)
-
-    #calc dj
-    shortest = nx.dijkstra_path(G,source=src,target=dest)
-    best = creator.Individual()      
-    best[:] = shortest
-    best.fitness.values = evalOneMin(best)
-    timeDjDone = time.time()
-    print "Best"
-    showInd(best)
 
     # Begin the evolution
     NGEN = 30
@@ -214,6 +214,12 @@ if __name__ == '__main__':
                 cc1, cc2 = toolbox.mate(c1, c2)
                 cxOut.append(cc1)
                 cxOut.append(cc2)
+                #print "cx ===="
+                #showInd(c1)
+                #showInd(c2)
+                #showInd(cc1)
+                #showInd(cc2)
+                #print "===="
 
         # mutation
         mutantOut = []
@@ -222,7 +228,6 @@ if __name__ == '__main__':
                 mut = toolbox.mutate(mutant, dest)
                 if mut != None:
                     mutantOut.append(mut)   
-
         #compose a big group of population
         #bigPop = pop + mutantOut + cxOut
         bigPop = mutantOut + cxOut
@@ -240,38 +245,54 @@ if __name__ == '__main__':
         mean = sum(fits) / length
         sum2 = sum(x*x for x in fits)
         std = abs(sum2 / length - mean**2)**0.5
-        Min = min(fits)
-        Max = max(fits)
-        if Min == best.fitness.values[0] and \
-            getBestTime != None:
-            getBestTime = time.time()
         
         print "==" * 40
         #showPop(pop)
-        print("#  DJBEST %s" % best.fitness.values[0])
-        print("#  Min %s" % Min)
-        print("#  Max %s" % Max)
+        print("#  Min %s" % min(fits))
+        print("#  Max %s" % max(fits))
         print("#  Avg %s" % mean)
         print("#  Std %s" % std)
         print "==" * 40
-        timeNow = time.time()
-        print "GAOUT: |" + "GEN[%s] Min[%s] Max[%s] Mean[%s] Std[%.2f] timeUsed[%s]" % \
-                (g, Min, Max, mean, std, timeNow-timeDjDone)
 
-    timeGaDone = time.time()
     popBest = tools.selBest(pop, 1)[0]
     print "popBest"
     showInd(popBest)
+    shortest = nx.dijkstra_path(DG,source=src,target=dest)
+    best = creator.Individual()      
+    best[:] = shortest
+    best.fitness.values = evalOneMin(best)
     print "Best"
     showInd(best)
-    #djTime, initTime, getBestTime, allTime
-    initTimeP = timeInitDone - timeBegin   
-    djTimeP = timeDjDone - timeInitDone
-    if getBestTime != None:
-        bestTimeP = getBestTime - timeDjDone
-    else:
-        bestTimeP = None
-    allTimeP = timeGaDone - timeDjDone
-    print "GAOUT: |ALL" + "djTime[%s] initTime[%s] getBestTime[%s] allTime[%s]" %\
-        (djTimeP, initTimeP, bestTimeP, allTimeP) 
+
+    #for node in DG:
+    #    if node in best and node in popBest:
+    #        DG.node[node]['color'] = 'red'
+    #    elif node in best:
+    #        DG.node[node]['color'] = 'green'
+    #    elif node in popBest:
+    #        DG.node[node]['color'] = 'blue'
+    #    else:
+    #        DG.node[node]['color'] = 'cyan'
+
+    #node_color = [DG.node[v]['color'] for v in DG]
+    #edge_labels = dict([((u,v,),d['weight']) 
+    #                for u,v,d in DG.edges(data=True)])
+
+    #for a, b in zip(popBest[:-1:2], popBest[1::2]):
+    #    DG[a][b]['color'] = 'blue'    
+
+    #print zip(best[:-1], best[1::])
+    #for a, b in zip(best[:-1], best[1::]):
+    #    if DG[a][b]['color'] == 'blue':
+    #        DG[a][b]['color'] = 'red'   
+    #    else:
+    #        DG[a][b]['color'] = 'green'   
+
+    #edge_colors = [ d['color'] for a,b,d in DG.edges(data=True) ] 
+    #
+    #pos=nx.spring_layout(DG)
+    #nx.draw_networkx_edge_labels(DG, pos, edge_labels=edge_labels)
+    #nx.draw(DG, pos, node_color=node_color, node_size=300, edge_color=edge_colors, edge_cmap=plt.cm.Reds)
+
+    #plt.show()
 
