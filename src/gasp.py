@@ -199,7 +199,7 @@ if __name__ == '__main__':
     showInd(best)
 
     # Begin the evolution
-    NGEN = 30
+    NGEN = 500
     for g in range(NGEN):
         print("# -- Generation %i --" % g)
         # select
