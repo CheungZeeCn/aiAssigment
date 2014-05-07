@@ -10,12 +10,14 @@ from deap import base
 from deap import creator
 from deap import tools
 import networkx as nx
+import re
 
 def readGraph(fname):
+    reEmpty = re.compile("\s+")
     DG=nx.DiGraph()        
     with open(fname) as f:
         for l in f:
-            edge = l.strip().split(' ')
+            edge = reEmpty.split(l.strip())
             #print edge
             if edge == []:
                 continue
@@ -23,10 +25,11 @@ def readGraph(fname):
     return DG
 
 def readGraph2(fname):
+    reEmpty = re.compile("\s+")
     G = nx.Graph()
     with open(fname) as f:
         for l in f:
-            edge = l.strip().split(' ')
+            edge = reEmpty.split(l.strip())
             #print edge
             if edge == []:
                 continue

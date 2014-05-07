@@ -20,11 +20,11 @@ import time
 print "load data"
 G = util.readGraph2('graph.txt')
 print "load data done"
-src = '1'
-dest = '10'
+src = '0'
+dest = '500'
 CXPB = 0.8
 MUTPB = 0.05
-POPU = 30
+POPU = 60
 
 
 def randomPickEdge(G, n, exclude=[]):

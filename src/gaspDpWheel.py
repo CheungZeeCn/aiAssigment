@@ -24,18 +24,18 @@ gInitCounter = Counter()
 print "load data"
 G = util.readGraph2('graph.txt')
 print "load data done"
-src = '1'
-dest = '10'
+src = '0'
+dest = '500'
 LCXPB = 0.8
 LMUTPB = 0.05
 GCXPB = 0.8
-GMUTPB = 0.4
+GMUTPB = 0.8
 POPU = 60
 LPOPU = 30
 GPOPU = 30
 
 def selRoulette(individuals, k):
-    s_inds = sorted(individuals, key=lambdaattrgetter("fitness"), reverse=False)
+    s_inds = sorted(individuals, key=attrgetter("fitness"), reverse=False)
     sum_fits = 1
     
     chosen = []
@@ -356,7 +356,7 @@ if __name__ == '__main__':
     showInd(best)
 
     # Begin the evolution
-    NGEN = 500
+    NGEN = 2500
     for g in range(NGEN):
         print("# -- Generation %i --" % g)
         """ G part !!!"""
@@ -410,6 +410,8 @@ if __name__ == '__main__':
                         mutantOut.append(mut)   
                     else:
                         mutantOut.append(mutant)   
+                else:
+                    mutantOut.append(mutant)   
             else:
                 mutantOut.append(mutant)   
         #compose a big group of population

@@ -399,6 +399,8 @@ if __name__ == '__main__':
                         mutantOut.append(mut)   
                     else:
                         mutantOut.append(mutant)   
+                else:
+                    mutantOut.append(mutant)   
             else:
                 mutantOut.append(mutant)   
         #compose a big group of population

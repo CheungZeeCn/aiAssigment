@@ -24,12 +24,12 @@ gInitCounter = Counter()
 print "load data"
 G = util.readGraph2('graph.txt')
 print "load data done"
-src = '1'
-dest = '10'
+src = '0'
+dest = '500'
 LCXPB = 0.8
 LMUTPB = 0.05
 GCXPB = 0.8
-GMUTPB = 0.4
+GMUTPB = 0.8
 POPU = 60
 LPOPU = 30
 GPOPU = 30
@@ -338,7 +338,7 @@ if __name__ == '__main__':
     showInd(best)
 
     # Begin the evolution
-    NGEN = 500
+    NGEN = 2500
     for g in range(NGEN):
         print("# -- Generation %i --" % g)
         """ G part !!!"""
@@ -392,14 +392,18 @@ if __name__ == '__main__':
                         mutantOut.append(mut)   
                     else:
                         mutantOut.append(mutant)   
+                else:
+                    mutantOut.append(mutant)
             else:
                 mutantOut.append(mutant)   
+
         #compose a big group of population
         #bigPop = pop + mutantOut + cxOut
         lPop = mutantOut
 
         lFits = [ind.fitness.values[0] for ind in lPop]
         length = len(lPop)
+        lLength = length
         lMean = sum(lFits) / length
         lSum2 = sum(x*x for x in lFits)
         lStd = abs(lSum2 / length - lMean**2)**0.5
@@ -408,6 +412,7 @@ if __name__ == '__main__':
 
         gFits = [ind.fitness.values[0] for ind in gPop]
         length = len(gPop)
+        gLength = length
         gMean = sum(gFits) / length
         gSum2 = sum(x*x for x in gFits)
         gStd = abs(gSum2 / length - gMean**2)**0.5
@@ -430,11 +435,13 @@ if __name__ == '__main__':
         print "==" * 40
         #showPop(lPop)
         print("#  DJBEST %s" % best.fitness.values[0])
+        print("#  lLeng %s" % lLength)
         print("#  lMin %s" % lMin)
         print("#  lMax %s" % lMax)
         print("#  lAvg %s" % lMean)
         print("#  lStd %s" % lStd)
         print "- " * 40
+        print("#  gLeng %s" % gLength)
         print("#  gMin %s" % gMin)
         print("#  gMax %s" % gMax)
         print("#  gAvg %s" % gMean)
